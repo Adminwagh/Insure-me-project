@@ -145,49 +145,42 @@ Click "OK" to save your DockerHub credentials. </br>
 
 ```groovy
 pipeline {
-    
-     agent any
-
+    agent any
+      tools {
+        maven "maven"
+    }
     stages {
-        stage('Code-Checkout') {
+        stage('Checkout') {
             steps {
-              checkout scmGit(branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-token', url: 'https://github.com/abhipraydhoble/Project-InsureMe.git']])
+                git branch: 'main', url: 'https://github.com/Adminwagh/Project-insure-me.git'
             }
         }
-        
         stage('Code-Build') {
             steps {
                sh 'mvn clean package'
             }
         }
-        
-        stage('Containerize the application'){
-            steps { 
-               echo 'Creating Docker image'
-               sh "docker build -t abhipraydh96/insure:v1 ."
+        stage('Docker-Build') {
+            steps {
+                sh 'docker build -t adminwagh/project:p1 .'
             }
         }
         
-        stage('Docker Push') {
-    	agent any
-          steps {
-       	withCredentials([usernamePassword(credentialsId: 'dockerhub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
-            	sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
-                sh 'docker push abhipraydh96/insure:v1'
+        stage('Docker-Push') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'docker-cre', passwordVariable: 'password', usernameVariable: 'username')]) {
+                    sh "docker login -u ${env.username} -p ${env.password}"
+                    sh 'docker push adminwagh/project:p1'
+                }
+            }
+        }
+        stage('Code-Deploy') {
+        steps {
+           sh 'docker run -d -p 8089:8081 adminwagh/project:p1'
         }
       }
     }
-    
-      
-    stage('Code-Deploy') {
-        steps {
-           ansiblePlaybook credentialsId: 'ansible', installation: 'ansible', playbook: 'ansible-playbook.yml', vaultTmpPath: ''       
-        }
-      }
-    
-   }
 }
-
 
 ```
 
